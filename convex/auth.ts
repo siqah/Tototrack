@@ -25,20 +25,20 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
           },
         }
       : {}),
-    user: {
-      additionalFields: {
-        role: { type: "string", defaultValue: "parent" },
-        schoolId: { type: "string", required: false },
-        busId: { type: "string", required: false },
-      },
-    },
   });
 };
 
+// Roles are stored in convex/userRoles.ts — not in better-auth user fields
 export async function requireRole(ctx: QueryCtx | MutationCtx, role: string) {
   const user = await betterAuthClient.safeGetAuthUser(ctx);
-  if (!user || (user as Record<string, unknown>).role !== role) {
-    throw new Error(`Unauthorized: requires ${role}`);
-  }
-  return user;
+  if (!user) throw new Error("Unauthorized: not signed in");
+
+  const roleDoc = await ctx.db
+    .query("userRoles")
+    .withIndex("by_user", (q) => q.eq("userId", user.id as string))
+    .first();
+
+  const userRole = roleDoc?.role ?? "parent";
+  if (userRole !== role) throw new Error(`Unauthorized: requires ${role}`);
+  return { ...user, role: userRole };
 }

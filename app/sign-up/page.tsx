@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { signUp } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const setRole = useMutation(api.userRoles.setRole);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -20,12 +23,17 @@ export default function SignUpPage() {
     setLoading(true);
     setError("");
     const result = await signUp.email({ email, password, name });
-    setLoading(false);
     if (result.error) {
       setError(result.error.message ?? "Sign up failed");
-    } else {
-      router.push("/parent");
+      setLoading(false);
+      return;
     }
+    // Set the parent role in Convex after successful sign-up
+    if (result.data?.user?.id) {
+      await setRole({ userId: result.data.user.id, role: "parent" });
+    }
+    setLoading(false);
+    router.push("/parent");
   }
 
   return (

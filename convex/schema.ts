@@ -102,4 +102,13 @@ export default defineSchema({
     childId: v.optional(v.id("children")),
     alertId: v.optional(v.id("alerts")),
   }),
+
+  // Stores roles separately since @convex-dev/better-auth doesn't support
+  // additionalFields on the user model in v0.12
+  userRoles: defineTable({
+    userId: v.string(), // better-auth user.id
+    role: v.string(),  // "school_admin" | "driver" | "parent" | "operator"
+    schoolId: v.optional(v.string()),
+    busId: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
 });
