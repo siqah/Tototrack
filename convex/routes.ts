@@ -20,6 +20,16 @@ export const create = mutation({
   },
 });
 
+export const getBySchool = query({
+  args: { schoolId: v.id("schools") },
+  handler: async (ctx, { schoolId }) => {
+    return ctx.db
+      .query("routes")
+      .filter((q) => q.eq(q.field("schoolId"), schoolId))
+      .collect();
+  },
+});
+
 export const getByBus = query({
   args: { busId: v.string() },
   handler: async (ctx, { busId }) => {
