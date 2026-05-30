@@ -26,6 +26,7 @@ export default defineSchema({
     heading: v.optional(v.number()),
     status: v.string(),
     lastUpdated: v.number(),
+    routePointIndex: v.optional(v.number()),
   }).index("by_school", ["schoolId"]),
 
   routes: defineTable({

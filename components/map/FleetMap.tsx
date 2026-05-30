@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { NAIROBI_CENTER, NAIROBI_ZOOM } from "@/lib/nairobi";
+import { NAIROBI_CENTER, NAIROBI_ZOOM, ROAD_ROUTE_COORDS, DEMO_ROUTE_STOPS } from "@/lib/nairobi";
 import { BusDetailPanel } from "@/components/dashboard/BusDetailPanel";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -27,14 +27,11 @@ type Bus = {
   schoolId: Id<"schools">;
 };
 
-type Waypoint = { lat: number; lng: number; label: string; order: number };
-
 export function FleetMap({ schoolId, highlightBusId }: FleetMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const mapLoaded = useRef(false);
+  const routeDrawn = useRef(false);
   const markers = useRef<Map<string, maplibregl.Marker>>(new Map());
-  const routeLayers = useRef<Set<string>>(new Set());
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
 
   const buses = useQuery(
@@ -42,12 +39,7 @@ export function FleetMap({ schoolId, highlightBusId }: FleetMapProps) {
     schoolId ? { schoolId } : "skip",
   ) as Bus[] | undefined;
 
-  const routes = useQuery(
-    api.routes.getBySchool,
-    schoolId ? { schoolId: schoolId as Id<"schools"> } : "skip",
-  );
-
-  // Init map once
+  // Init map + draw road path once on load
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
     const map = new maplibregl.Map({
@@ -56,78 +48,54 @@ export function FleetMap({ schoolId, highlightBusId }: FleetMapProps) {
       center: NAIROBI_CENTER,
       zoom: NAIROBI_ZOOM,
     });
-    map.on("load", () => { mapLoaded.current = true; });
+
+    map.on("load", () => {
+      if (routeDrawn.current) return;
+      routeDrawn.current = true;
+
+      // Faint red road-accurate polyline (same coords the simulator uses)
+      map.addSource("road-route", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: ROAD_ROUTE_COORDS.map(([lat, lng]) => [lng, lat]),
+          },
+          properties: {},
+        },
+      });
+      map.addLayer({
+        id: "road-route-line",
+        type: "line",
+        source: "road-route",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#ef4444",
+          "line-width": 2.5,
+          "line-opacity": 0.4,
+          "line-dasharray": [3, 2],
+        },
+      });
+
+      // Named stop dots with popups
+      DEMO_ROUTE_STOPS.forEach((stop) => {
+        const el = document.createElement("div");
+        el.style.cssText = `
+          width:9px;height:9px;background:#ef4444;border-radius:50%;
+          border:2px solid rgba(255,255,255,0.8);opacity:0.85;cursor:pointer;
+        `;
+        new maplibregl.Marker({ element: el })
+          .setLngLat([stop.lng, stop.lat])
+          .setPopup(
+            new maplibregl.Popup({ offset: 12, closeButton: false }).setText(stop.label),
+          )
+          .addTo(map);
+      });
+    });
+
     mapRef.current = map;
   }, []);
-
-  // Draw route polylines (faint red) once map + routes are ready
-  useEffect(() => {
-    if (!routes?.length) return;
-
-    const map = mapRef.current;
-    if (!map) return;
-
-    const draw = () => {
-      routes.forEach((route) => {
-        const sourceId = `route-${route.busId}`;
-        const layerId = `route-line-${route.busId}`;
-
-        if (routeLayers.current.has(layerId)) return; // already drawn
-
-        const sorted: Waypoint[] = [...route.waypoints].sort(
-          (a, b) => a.order - b.order,
-        );
-        const coordinates = sorted.map((w) => [w.lng, w.lat]);
-
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
-
-        map.addSource(sourceId, {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            geometry: { type: "LineString", coordinates },
-            properties: {},
-          },
-        });
-
-        map.addLayer({
-          id: layerId,
-          type: "line",
-          source: sourceId,
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": "#ef4444",
-            "line-width": 2.5,
-            "line-opacity": 0.4,
-            "line-dasharray": [3, 2],
-          },
-        });
-
-        // Stop markers at each waypoint
-        sorted.forEach((w) => {
-          const el = document.createElement("div");
-          el.style.cssText = `
-            width:8px;height:8px;background:#ef4444;border-radius:50%;
-            border:1.5px solid rgba(255,255,255,0.6);opacity:0.7;
-          `;
-          new maplibregl.Marker({ element: el })
-            .setLngLat([w.lng, w.lat])
-            .setPopup(
-              new maplibregl.Popup({ offset: 10, closeButton: false }).setText(w.label),
-            )
-            .addTo(map);
-        });
-
-        routeLayers.current.add(layerId);
-      });
-    };
-
-    if (mapLoaded.current) {
-      draw();
-    } else {
-      mapRef.current?.on("load", draw);
-    }
-  }, [routes]);
 
   // Move / create bus markers
   useEffect(() => {
