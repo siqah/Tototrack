@@ -93,6 +93,10 @@ export default defineSchema({
     photoStorageId: v.optional(v.string()),
   }).index("by_bus", ["busId"]),
 
+  simulatorState: defineTable({
+    running: v.boolean(),
+  }),
+
   smsLog: defineTable({
     to: v.string(),
     message: v.string(),
