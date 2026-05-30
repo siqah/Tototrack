@@ -125,7 +125,7 @@ Unlike raw GPS trackers, TotoTrack layers AI on top of location data to generate
 | Frontend | Next.js 15 App Router                   | Fast, client-side real-time updates                                 |
 | Backend  | Convex                                  | Real-time WebSocket subscriptions, serverless actions, file storage |
 | Auth     | Better Auth + `@convex-dev/better-auth` | Framework-agnostic, role-based, OAuth + email/password              |
-| AI       | Vercel AI SDK + Anthropic Claude        | Anomaly detection, NL SMS generation                                |
+| AI       | Vercel AI SDK + Groq                    | Anomaly detection, NL SMS generation                                |
 | SMS      | `ujumbe-sms-client`                     | Kenyan SMS gateway, local deliverability                            |
 | Maps     | MapLibre GL JS + OpenFreeMap            | Open-source, zero cost, no API key required                         |
 | UI       | shadcn/ui + Tailwind CSS                | Consistent, accessible component system                             |
@@ -883,8 +883,8 @@ NEXT_PUBLIC_APP_URL=https://tototrack.app
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# Anthropic (Claude)
-ANTHROPIC_API_KEY=sk-ant-...
+# Groq
+GROQ_API_KEY=gsk_...
 
 # UjumbeSMS
 UJUMBESMS_API_KEY=ZDIzxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
