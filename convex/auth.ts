@@ -6,17 +6,25 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 export const betterAuthClient = createClient<DataModel>(components.betterAuth);
 
-export const createAuth = (ctx: GenericCtx<DataModel>) =>
-  betterAuth({
+export const createAuth = (ctx: GenericCtx<DataModel>) => {
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  return betterAuth({
     database: betterAuthClient.adapter(ctx),
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
     emailAndPassword: { enabled: true },
-    socialProviders: {
-      google: {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      },
-    },
+    ...(googleClientId && googleClientSecret
+      ? {
+          socialProviders: {
+            google: {
+              clientId: googleClientId,
+              clientSecret: googleClientSecret,
+            },
+          },
+        }
+      : {}),
     user: {
       additionalFields: {
         role: { type: "string", defaultValue: "parent" },
@@ -25,6 +33,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) =>
       },
     },
   });
+};
 
 export async function requireRole(ctx: QueryCtx | MutationCtx, role: string) {
   const user = await betterAuthClient.safeGetAuthUser(ctx);
