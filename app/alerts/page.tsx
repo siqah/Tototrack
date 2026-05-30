@@ -1,16 +1,21 @@
 "use client";
 import { useSession } from "@/lib/auth-client";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { AlertFeed } from "@/components/dashboard/AlertFeed";
 import { redirect } from "next/navigation";
 
 export default function AlertsPage() {
   const { data: session, isPending } = useSession();
+  const userRole = useQuery(
+    api.userRoles.getByUser,
+    session ? { userId: session.user.id } : "skip",
+  );
 
   if (isPending) return <div className="flex h-screen items-center justify-center bg-gray-950 text-white">Loading...</div>;
   if (!session) redirect("/sign-in");
 
-  const user = session.user as { schoolId?: string };
-  const schoolId = user.schoolId ?? "";
+  const schoolId = userRole?.schoolId ?? "";
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">

@@ -36,3 +36,13 @@ export const getRole = query({
     return doc?.role ?? "parent";
   },
 });
+
+export const getByUser = query({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    return ctx.db
+      .query("userRoles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+  },
+});

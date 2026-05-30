@@ -12,14 +12,17 @@ export default function BusDetailPage() {
   const { busId } = useParams<{ busId: string }>();
   const { data: session, isPending } = useSession();
   const bus = useQuery(api.buses.getByBusId, { busId });
+  const userRole = useQuery(
+    api.userRoles.getByUser,
+    session ? { userId: session.user.id } : "skip",
+  );
   const triggerAnomaly = useMutation(api.simulator.triggerAnomaly);
   const tick = useMutation(api.simulator.tick);
 
   if (isPending) return <div className="flex h-screen items-center justify-center bg-gray-950 text-white">Loading...</div>;
   if (!session) redirect("/sign-in");
 
-  const user = session.user as { schoolId?: string };
-  const schoolId = user.schoolId ?? "";
+  const schoolId = userRole?.schoolId ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-gray-950 text-white">

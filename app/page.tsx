@@ -1,5 +1,7 @@
 "use client";
 import { useSession } from "@/lib/auth-client";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { FleetMap } from "@/components/map/FleetMap";
 import { FleetOverview } from "@/components/dashboard/FleetOverview";
 import { AlertFeed } from "@/components/dashboard/AlertFeed";
@@ -7,6 +9,10 @@ import { redirect } from "next/navigation";
 
 export default function HomePage() {
   const { data: session, isPending } = useSession();
+  const userRole = useQuery(
+    api.userRoles.getByUser,
+    session ? { userId: session.user.id } : "skip",
+  );
 
   if (isPending) {
     return (
@@ -20,15 +26,14 @@ export default function HomePage() {
     redirect("/sign-in");
   }
 
-  const user = session.user as { schoolId?: string };
-  const schoolId = user.schoolId ?? "";
+  const schoolId = userRole?.schoolId ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-gray-950 text-white">
       <header className="flex items-center justify-between border-b border-gray-800 px-6 py-3">
         <h1 className="text-xl font-bold tracking-tight">🚌 TotoTrack</h1>
         <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-400">{session.user.email}</span>
+          <span className="text-gray-400">{session!.user.email}</span>
           <a href="/setup" className="text-blue-400 hover:underline">Setup</a>
           <a href="/alerts" className="text-yellow-400 hover:underline">Alerts</a>
         </div>
@@ -36,7 +41,18 @@ export default function HomePage() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1">
-          <FleetMap schoolId={schoolId} />
+          {schoolId ? (
+            <FleetMap schoolId={schoolId} />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-gray-900">
+              <div className="text-center space-y-2">
+                <p className="text-gray-400">No school linked yet.</p>
+                <a href="/setup" className="text-blue-400 text-sm hover:underline">
+                  Go to Setup to seed demo data →
+                </a>
+              </div>
+            </div>
+          )}
         </div>
         <aside className="w-80 overflow-y-auto border-l border-gray-800 bg-gray-900 p-4">
           <FleetOverview schoolId={schoolId} />

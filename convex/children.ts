@@ -28,6 +28,7 @@ export const create = mutation({
     name: v.string(),
     parentName: v.string(),
     parentPhone: v.string(),
+    parentUserId: v.optional(v.string()),
     stopLabel: v.string(),
     stopOrder: v.number(),
     grade: v.string(),
