@@ -1,10 +1,7 @@
-import { convexBetterAuthNextJs } from "@convex-dev/better-auth/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
-const { isAuthenticated } = convexBetterAuthNextJs({
-  convexUrl: process.env.NEXT_PUBLIC_CONVEX_URL!,
-  convexSiteUrl: process.env.NEXT_PUBLIC_CONVEX_SITE_URL!,
-});
+// Better Auth session cookie name (default in better-auth v1.x)
+const SESSION_COOKIE = "better-auth.session_token";
 
 const PROTECTED_PATHS = [
   "/buses",
@@ -14,14 +11,14 @@ const PROTECTED_PATHS = [
   "/parent",
 ];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 
-  const authed = await isAuthenticated();
-  if (!authed) {
+  const sessionCookie = request.cookies.get(SESSION_COOKIE);
+  if (!sessionCookie) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
