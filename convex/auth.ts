@@ -14,6 +14,10 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     database: betterAuthClient.adapter(ctx),
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    trustedOrigins: [
+      process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+      process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? "",
+    ],
     emailAndPassword: { enabled: true },
     ...(googleClientId && googleClientSecret
       ? {
@@ -35,7 +39,7 @@ export async function requireRole(ctx: QueryCtx | MutationCtx, role: string) {
 
   const roleDoc = await ctx.db
     .query("userRoles")
-    .withIndex("by_user", (q) => q.eq("userId", user.id as string))
+    .withIndex("by_user", (q) => q.eq("userId", String(user._id)))
     .first();
 
   const userRole = roleDoc?.role ?? "parent";
