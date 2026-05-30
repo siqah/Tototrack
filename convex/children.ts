@@ -38,6 +38,13 @@ export const create = mutation({
   },
 });
 
+export const setParentUserId = mutation({
+  args: { childId: v.id("children"), parentUserId: v.string() },
+  handler: async (ctx, { childId, parentUserId }) => {
+    await ctx.db.patch(childId, { parentUserId });
+  },
+});
+
 export const confirmBoarding = mutation({
   args: { childId: v.id("children"), confirmedBy: v.string() },
   handler: async (ctx, { childId, confirmedBy }) => {
