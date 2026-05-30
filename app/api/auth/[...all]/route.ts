@@ -1,4 +1,9 @@
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { convexBetterAuthNextJs } from "@convex-dev/better-auth/nextjs";
 
-export const { GET, POST } = toNextJsHandler(auth);
+const { handler } = convexBetterAuthNextJs({
+  convexUrl: process.env.NEXT_PUBLIC_CONVEX_URL!,
+  convexSiteUrl: process.env.NEXT_PUBLIC_CONVEX_SITE_URL!,
+});
+
+export const GET = handler.GET;
+export const POST = handler.POST;
